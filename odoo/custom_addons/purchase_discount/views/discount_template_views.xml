@@ -6,8 +6,7 @@
         <field name="arch" type="xml">
             <list string="Purchase Discounts">
                 <field name="name"/>
-                <field name="discount_type"/>
-                <field name="discount_value"/>
+                <field name="discount_value" string="Percentage (%)"/>
             </list>
         </field>
     </record>
@@ -20,8 +19,7 @@
                 <sheet>
                     <group>
                         <field name="name"/>
-                        <field name="discount_type" widget="radio"/>
-                        <field name="discount_value"/>
+                        <field name="discount_value" string="Percentage (%)"/>
                     </group>
                 </sheet>
             </form>
@@ -39,6 +37,6 @@
         name="Discounts"
         action="action_purchase_discount"
         parent="purchase.menu_purchase_config"
-        sequence="30"
+        sequence="3"
     />
 </odoo>

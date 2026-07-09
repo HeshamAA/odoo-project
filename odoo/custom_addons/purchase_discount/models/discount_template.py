@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import fields, models,api
 
 
 class PurchaseDiscount(models.Model):
@@ -7,18 +7,11 @@ class PurchaseDiscount(models.Model):
     _order = 'name'
 
     name = fields.Char(required=True)
-    discount_type = fields.Selection([
-        ('percent', 'Percentage (%)'),
-        ('fixed', 'Fixed Amount'),
-    ], required=True, default='percent', string='Type')
-    discount_value = fields.Float('Value', required=True, digits='Discount')
+    discount_value = fields.Float('Percentage (%)', required=True, digits='Discount')
 
-    def name_get(self):
-        result = []
+    @api.depends('name', 'discount_value')
+    def _compute_display_name(self):
         for rec in self:
-            if rec.discount_type == 'percent':
-                label = f"{rec.name} ({rec.discount_value}%)"
-            else:
-                label = f"{rec.name} (-{rec.discount_value})"
-            result.append((rec.id, label))
-        return result
+            rec.display_name = (
+                f"{rec.name} ({rec.discount_value}%)"
+            )

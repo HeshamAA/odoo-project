@@ -25,7 +25,26 @@ class PurchaseOrderDiscount(models.TransientModel):
         ],
         default='pol_discount',
     )
+ 
+    @api.model
+    def default_get(self, fields_list):
+      res = super().default_get(fields_list)
 
+      purchase_order_id = self.env.context.get('active_id')
+      if purchase_order_id:
+        order = self.env['purchase.order'].browse(purchase_order_id)
+
+        lines = order.order_line.filtered(
+            lambda l: l.discount_ids and not l.display_type
+        )
+
+        if lines:
+            lines.write({
+        'discount': 0.0,
+        'my_discount': 0.0,
+    })
+
+        return res
     @api.constrains('discount_type', 'discount_percentage')
     def _check_discount_amount(self):
         for wizard in self:
@@ -101,10 +120,16 @@ class PurchaseOrderDiscount(models.TransientModel):
                 else:
                     description = self.env._("Discount")
 
+            # price_unit holds the actual computed discount amount (negative) for correct accounting.
+            # price_unit_before_discount is used for display only: show the absolute discount value.
+            actual_price_unit = base_line['price_unit']
+            display_price_unit = actual_price_unit * base_line['quantity']
+
             po_line_values_list.append({
                 'name': description,
                 'product_id': base_line['product_id'].id,
-                'price_unit': base_line['price_unit'],
+                'price_unit': actual_price_unit,
+                'price_unit_before_discount': display_price_unit,
                 'product_qty': base_line['quantity'],
                 'tax_ids': [Command.set(base_line['tax_ids'].ids)],
                 'date_planned': fields.Datetime.now(),
@@ -149,11 +174,25 @@ class PurchaseOrderDiscount(models.TransientModel):
         ]
 
     def action_apply_discount(self):
-        self.ensure_one()
-        self = self.with_company(self.company_id)
-        if self.discount_type == 'pol_discount':
-            self.purchase_order_id.order_line.write(
-                {'discount': self.discount_percentage * 100}
-            )
-        else:
-            self._create_discount_lines()
+             self.ensure_one()
+             self = self.with_company(self.company_id)
+
+             if self.discount_type == 'pol_discount':
+               percentage = self.discount_percentage * 100
+
+               lines = self.purchase_order_id.order_line.filtered(
+                   lambda l: not l.display_type
+               )
+     
+               for line in lines:
+                  
+                 if line.discount_ids:
+                    continue
+
+                 line.write({
+                'my_discount': percentage,
+                'discount': 0.0,
+             })
+                 line._compute_price_unit_and_date_planned_and_name()
+             else:
+                self._create_discount_lines()

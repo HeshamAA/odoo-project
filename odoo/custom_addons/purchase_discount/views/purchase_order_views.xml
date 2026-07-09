@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
     <record id="view_purchase_order_line_discount" model="ir.ui.view">
         <field name="name">purchase.order.line.discount</field>
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
 
-            <xpath expr="//group[hasclass('oe_subtotal_footer')]" position="before">
-                <div class="float-end d-flex gap-1 mb-2">
+            <!-- Discount Buttons -->
+            <xpath expr="//field[@name='note']/ancestor::group[1]" position="after">
+                <div class="float-end d-flex gap-1 mb-2 justify-content-end">
+
                     <button
                         string="Discount"
                         name="action_open_discount_wizard"
@@ -15,6 +18,7 @@
                         class="btn btn-secondary"
                         invisible="state in ('purchase', 'done', 'cancel')"
                     />
+
                     <button
                         string="Discount"
                         name="action_open_discount_wizard"
@@ -23,37 +27,85 @@
                         disabled="1"
                         invisible="state not in ('purchase', 'done', 'cancel')"
                     />
+
                 </div>
             </xpath>
 
-            <xpath expr="//field[@name='order_line']/list/field[@name='discount']" position="attributes">
-                <attribute name="column_invisible">1</attribute>
-            </xpath>
 
+            <!-- Hide Original Price Unit -->
             <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="attributes">
                 <attribute name="column_invisible">1</attribute>
             </xpath>
 
-            <xpath expr="//field[@name='order_line']/list/field[@name='price_subtotal']" position="before">
-                <field name="price_unit_before_discount" string="Unit Price"/>
+
+            <!-- Show Custom Price + Discounts -->
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="after">
+
+                <field name="price_unit_before_discount"
+                       string="Unit Price"
+                       optional="show"
+                       readonly="qty_invoiced != 0"/>
+
                 <field name="discount_ids"
                        widget="many2many_tags"
                        string="Discounts"
-                       options="{'no_create': False, 'no_create_edit': False, 'no_open': False}"/>
+                       optional="show"
+                       options="{
+                           'no_create': False,
+                           'no_create_edit': False,
+                           'no_open': False
+                       }"/>
+
+                <field name="my_discount"
+                       string="Disc%"
+                       optional="show"
+                       readonly="discount_ids or qty_invoiced != 0"/>
+
+
             </xpath>
 
-            <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="after">
-                <field name="price_unit_before_discount" string="Unit Price"/>
-                <field name="discount_ids"
-                       widget="many2many_tags"
-                       string="Discounts"
-                       options="{'no_create': False, 'no_create_edit': False, 'no_open': False}"/>
+
+            <!-- Hide Original Discount In List -->
+            <xpath expr="//field[@name='order_line']/list/field[@name='discount']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
             </xpath>
 
+
+            <!-- Hide Original Price Unit In Line Form -->
             <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
 
+
+            <!-- Show Custom Fields In Line Form -->
+            <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="after">
+
+                <field name="price_unit_before_discount"
+                       string="Unit Price"/>
+
+                <field name="my_discount"
+                       string="Discount %"
+                       readonly="discount_ids or qty_invoiced != 0"/>
+
+                <field name="discount_ids"
+                       widget="many2many_tags"
+                       string="Discounts"
+                       options="{
+                           'no_create': False,
+                           'no_create_edit': False,
+                           'no_open': False
+                       }"/>
+
+            </xpath>
+
+
+            <!-- Hide Original Discount In Line Form -->
+            <xpath expr="//field[@name='order_line']/form//field[@name='discount']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+
         </field>
     </record>
+
 </odoo>
